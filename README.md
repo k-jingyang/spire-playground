@@ -4,7 +4,7 @@
 kind create cluster --name cluster-a
 kind create cluster --name cluster-b
 ```
-3. On cluster-a
+3. On cluster-b
 ```bash
 # Configure spire server
 kubectx kind-cluster-b
