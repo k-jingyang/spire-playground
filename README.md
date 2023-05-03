@@ -1,3 +1,5 @@
+## Basic setup
+
 1. Install kind
 2. Create 2 clusters
 ```bash
@@ -77,20 +79,39 @@ kubectl exec -it -n test-workload <POD_NAME> -- /bin/sh
 ls certs 
 
 # If you run openssl x509 -in svid.pem -noout -text, you'll see the SPIFEE ID spiffe://example.org/test-workload/hello-world in SAN
-
 ```
+
+## Testing Envoy integration
+```
+# to create a node alias
+./create-node-registration-entry.sh
+
+kubens default && kubectl apply -k envoy-x509/k8s
+
+# You should see "target SdsApi spiffe://example.org/ns/default/sa/default/backend initialized"
+kubectl logs <BACKEND_POD_NAME> envoy 
+```
+
+3. `kubectl`
 
 ### Notes
 1. PSAT can be used to attest nodes (agents) that do not belong in the same cluster at the server. [Reference](https://spiffe.io/docs/latest/deploying/configuring/#service-account-tokens)
 2. Each node's agent will get the SPIFEE ID of `spiffe://<trust_domain>/spire/agent/k8s_sat/<cluster>/<UUID>`. 
-    - Because each workload can schedule on each node, do we have to create 1 entry per workload per node?!
+    - See `create-node-registration-entry.sh` to create a node alias for all nodes such that all nodes have the same SPIFEE ID
     - See the **Mapping Workloads to Multiple Nodes** section under https://spiffe.io/docs/latest/deploying/registering 
+3. The Envoy-OPA SPIRE integration gels quite nicely with our RAPID setup
+4. `hostPath` mounting is a must to for workloads to access the node's agent
+5. Agent's SPIFEE ID changes on restart
+   1. Could be a `kind` thing
+### Painpoints
+1. Painful to create registration entries 1 by 1
 
 ### Questions
+1. [How does outgoing traffic work for Envoy](https://spiffe.io/docs/latest/microservices/envoy-x509/readme/)
 1. Service mesh vs DIY SPIRE, which is better?
-2. Security SIEM use cases and how to enable them
+1. Security SIEM use cases and how to enable them
 
 ### Next steps
-1. How to use envoy sidecar to handle SPIFEE communication instead
+1. [How to use envoy sidecar to handle SPIFEE communication instead](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-x509)
 2. How to authorise
 3. Test with workload outside k8s
