@@ -86,6 +86,10 @@ ls certs
     - Because each workload can schedule on each node, do we have to create 1 entry per workload per node?!
     - See the **Mapping Workloads to Multiple Nodes** section under https://spiffe.io/docs/latest/deploying/registering 
 
+### Questions
+1. Service mesh vs DIY SPIRE, which is better?
+2. Security SIEM use cases and how to enable them
+
 ### Next steps
 1. How to use envoy sidecar to handle SPIFEE communication instead
 2. How to authorise
