@@ -82,17 +82,39 @@ ls certs
 ```
 
 ## Testing Envoy integration
-```
-# to create a node alias
-./create-node-registration-entry.sh
 
+1. Configure node agent alias
+
+```
+./create-node-registration-entry.sh
+```
+
+2. Create deployments
+
+```
 kubens default && kubectl apply -k envoy-x509/k8s
 
 # You should see "target SdsApi spiffe://example.org/ns/default/sa/default/backend initialized"
 kubectl logs <BACKEND_POD_NAME> envoy 
 ```
 
-3. `kubectl`
+3. Test connectivity from both frontend pods
+```
+# both should work
+kubectl exec -it <FRONTEND_POD_NAME> -c frontend -- curl http://localhost:3001/balances/balance_1
+kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:3003/balances/balance_2
+```
+
+4. Modify `k8s/backend/config/envoy.yaml` to exclude `spiffe://example.org/ns/default/sa/default/frontend`
+5. `kubectl rollout restart deployment backend`
+
+3. Test connectivity from both frontend pods
+```
+kubectl exec -it <FRONTEND_POD_NAME> -c frontend -- curl http://localhost:3001/balances/balance_1 # this should fail
+kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:3003/balances/balance_2
+```
+
+
 
 ### Notes
 1. PSAT can be used to attest nodes (agents) that do not belong in the same cluster at the server. [Reference](https://spiffe.io/docs/latest/deploying/configuring/#service-account-tokens)
@@ -103,11 +125,11 @@ kubectl logs <BACKEND_POD_NAME> envoy
 4. `hostPath` mounting is a must to for workloads to access the node's agent
 5. Agent's SPIFEE ID changes on restart
    1. Could be a `kind` thing
+
 ### Painpoints
 1. Painful to create registration entries 1 by 1
 
 ### Questions
-1. [How does outgoing traffic work for Envoy](https://spiffe.io/docs/latest/microservices/envoy-x509/readme/)
 1. Service mesh vs DIY SPIRE, which is better?
 1. Security SIEM use cases and how to enable them
 
