@@ -114,8 +114,6 @@ kubectl exec -it <FRONTEND_POD_NAME> -c frontend -- curl http://localhost:3001/b
 kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:3003/balances/balance_2
 ```
 
-
-
 ### Notes
 1. PSAT can be used to attest nodes (agents) that do not belong in the same cluster at the server. [Reference](https://spiffe.io/docs/latest/deploying/configuring/#service-account-tokens)
 2. Each node's agent will get the SPIFEE ID of `spiffe://<trust_domain>/spire/agent/k8s_sat/<cluster>/<UUID>`. 
@@ -128,10 +126,11 @@ kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:30
 
 ### Painpoints
 1. Painful to create registration entries 1 by 1
-
+2. Instead of connecting directly to another server, workloads now need to point to their sidecar envoy instead. 
+   1. But how does the sidecar envoy know which remote server to redirect to?
 ### Questions
 1. Service mesh vs DIY SPIRE, which is better?
-1. Security SIEM use cases and how to enable them
+2. Security SIEM use cases and how to enable them
 
 ### Next steps
 1. [How to use envoy sidecar to handle SPIFEE communication instead](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-x509)
