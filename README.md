@@ -101,8 +101,8 @@ kubectl logs <BACKEND_POD_NAME> envoy
 3. Test connectivity from both frontend pods
 ```
 # both should work
-kubectl exec -it <FRONTEND_POD_NAME> -c frontend -- curl http://localhost:3001/balances/balance_1
-kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:3003/balances/balance_2
+kubectl exec -it <FRONTEND_POD_NAME> -c frontend -- curl http://localhost:3001/balances/balance_1 # localhost:3001 is hitting envoy to proxy to the backend
+kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:3003/balances/balance_2 # localhost:3003 is hitting envoy to proxy to the backend
 ```
 
 4. Modify `k8s/backend/config/envoy.yaml` to exclude `spiffe://example.org/ns/default/sa/default/frontend`
@@ -115,24 +115,31 @@ kubectl exec -it <FRONTEND_2_POD_NAME> -c frontend-c -- curl http://localhost:30
 ```
 
 ### Notes
-1. PSAT can be used to attest nodes (agents) that do not belong in the same cluster at the server. [Reference](https://spiffe.io/docs/latest/deploying/configuring/#service-account-tokens)
+1. PSAT can be used to attest nodes (agents) that do not belong in the same cluster as the server. [Reference](https://spiffe.io/docs/latest/deploying/configuring/#service-account-tokens)
 2. Each node's agent will get the SPIFEE ID of `spiffe://<trust_domain>/spire/agent/k8s_sat/<cluster>/<UUID>`. 
     - See `create-node-registration-entry.sh` to create a node alias for all nodes such that all nodes have the same SPIFEE ID
     - See the **Mapping Workloads to Multiple Nodes** section under https://spiffe.io/docs/latest/deploying/registering 
 3. The Envoy-OPA SPIRE integration gels quite nicely with our RAPID setup
-4. `hostPath` mounting is a must to for workloads to access the node's agent
-5. Agent's SPIFEE ID changes on restart
+   1. We are already using Envoy + OPA
+4. `hostPath` mounting is a must for workloads to access the node's agent
+   1. Use https://github.com/spiffe/spiffe-csi instead
+5. Agent's SPIFEE ID changes on PC restart
    1. Could be a `kind` thing
+1. Service mesh vs DIY SPIRE, which is better way of deploying mTLS?
+   1. Based on [Istio docs](https://istio.io/latest/docs/ops/integrations/spire), you don't get SPIRE for free. You still have to setup the SPIRE ecosystem. The only thing Istio does for you to is to help configure the data plane Envoys to access the SPIRE agent socket
+   2. Istio has its own mTLS authentication mechanism but unlike SPIFFE, it's not a standard
+   3. [Not possible to federate identities across Istio meshes](https://istio.io/latest/docs/ops/deployment/deployment-models/#trust-between-meshes)
+      1. Istio recommends SPIFFE federation
 
 ### Painpoints
 1. Painful to create registration entries 1 by 1
+   1. https://github.com/spiffe/spire-controller-manager to manage via CRs that accepts templating
 2. Instead of connecting directly to another server, workloads now need to point to their sidecar envoy instead. 
-   1. But how does the sidecar envoy know which remote server to redirect to?
+   1. Is there an easier way of configuring this?
 ### Questions
-1. Service mesh vs DIY SPIRE, which is better?
+
 2. Security SIEM use cases and how to enable them
 
 ### Next steps
-1. [How to use envoy sidecar to handle SPIFEE communication instead](https://github.com/spiffe/spire-tutorials/tree/main/k8s/envoy-x509)
 2. How to authorise
 3. Test with workload outside k8s
